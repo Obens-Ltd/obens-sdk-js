@@ -1,0 +1,16 @@
+{
+  "name": "@obens/sdk",
+  "version": "0.1.0",
+  "description": "SDK for the Obens integration API: push farmers, facilities and partners under your own ids",
+  "type": "module",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": { ".": { "types": "./src/index.d.ts", "import": "./src/index.js" } },
+  "files": ["src", "README.md", "LICENSE"],
+  "engines": { "node": ">=18" },
+  "scripts": { "test": "node --test test/sdk.test.js test/biolife.test.js" },
+  "license": "MIT",
+  "repository": { "type": "git", "url": "git+https://github.com/Obens-Ltd/obens-sdk-js.git" },
+  "homepage": "https://github.com/Obens-Ltd/obens-sdk-js#readme",
+  "bugs": { "url": "https://github.com/Obens-Ltd/obens-sdk-js/issues" }
+}
