@@ -9,6 +9,7 @@
   "files": ["src", "README.md", "LICENSE"],
   "engines": { "node": ">=18" },
   "scripts": { "test": "node --test test/sdk.test.js test/biolife.test.js" },
+  "publishConfig": { "registry": "https://npm.pkg.github.com", "access": "restricted" },
   "license": "MIT",
   "repository": { "type": "git", "url": "git+https://github.com/Obens-Ltd/obens-sdk-js.git" },
   "homepage": "https://github.com/Obens-Ltd/obens-sdk-js#readme",

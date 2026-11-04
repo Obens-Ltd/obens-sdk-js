@@ -1,0 +1,39 @@
+name: release
+
+# Push a tag matching package.json version (e.g. v0.1.1) to publish the package
+# to GitHub Packages (npm) and create a GitHub release with the tarball.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://npm.pkg.github.com
+          scope: "@obens"
+      - name: Check tag matches package version
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if [ "v$version" != "${GITHUB_REF_NAME}" ]; then
+            echo "tag ${GITHUB_REF_NAME} does not match package version $version"; exit 1
+          fi
+      - run: npm test
+      - name: Publish to GitHub Packages
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create GitHub release
+        run: |
+          npm pack
+          gh release create "${GITHUB_REF_NAME}" ./*.tgz --generate-notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
