@@ -33,6 +33,8 @@ export interface FacilityPush {
   coordinates?: { type__: 'Point'; latitude: number; longitude: number } | { type__: 'Area'; type: string; features: unknown[] };
   data?: Record<string, unknown>;
   deleted?: boolean;
+  /** External id of the farmer this facility belongs to; omit for the account's own facility. */
+  subActorExternalId?: string;
 }
 
 export interface SyncResult {

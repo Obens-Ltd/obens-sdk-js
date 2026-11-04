@@ -31,8 +31,10 @@ class Resource {
     return results;
   }
 
-  get(externalId) {
-    return this.http.request('GET', `${this.path}/${enc(externalId)}`);
+  /** `subActor`: the external id of the farmer a facility belongs to (facility ids are unique per owner). */
+  get(externalId, { subActor } = {}) {
+    const query = subActor ? `?sub-actor=${enc(subActor)}` : '';
+    return this.http.request('GET', `${this.path}/${enc(externalId)}${query}`);
   }
 }
 
