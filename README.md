@@ -1,12 +1,20 @@
-# @obens/sdk (JavaScript)
+# @obens-ltd/sdk (JavaScript)
 
 Source: https://github.com/Obens-Ltd/obens-sdk-js
 
 Push your farmers, facilities and partners to the Obens platform under **your own ids**, and translate ids both ways.
 Node 18+ (uses the built-in `fetch`), no dependencies, TypeScript types included.
 
+The package is published to GitHub Packages. Point the `@obens-ltd` scope at it
+(a GitHub token with `read:packages` is required) in your `.npmrc`:
+
 ```
-npm install @obens/sdk
+@obens-ltd:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+```
+
+```
+npm install @obens-ltd/sdk
 ```
 
 ## 1. Get an API key
@@ -17,7 +25,7 @@ In the platform: **Settings → API keys → Create key**. Pick the account and 
 ## 2. Connect
 
 ```js
-import { ObensClient } from '@obens/sdk';
+import { ObensClient } from '@obens-ltd/sdk';
 
 const client = new ObensClient({
   baseUrl: 'https://api.obens.so/v2/core',
@@ -37,7 +45,7 @@ A mapper turns **your** record into what the platform expects. Strings are paths
 computed, `constant()` is a fixed value; empty results are skipped so an update never blanks a field.
 
 ```js
-import { createMapper, constant } from '@obens/sdk';
+import { createMapper, constant } from '@obens-ltd/sdk';
 
 const FARMERS_ELEMENT = '<element id from client.elements()>';
 

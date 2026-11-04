@@ -1,5 +1,5 @@
 {
-  "name": "@obens/sdk",
+  "name": "@obens-ltd/sdk",
   "version": "0.1.1",
   "description": "SDK for the Obens integration API: push farmers, facilities and partners under your own ids",
   "type": "module",
