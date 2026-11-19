@@ -13,7 +13,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /** Small fetch wrapper: api key header, JSON, timeout, and retries with backoff on transient failures. */
 export class Http {
-  constructor({ baseUrl, apiKey, accountId, timeoutMs = 30000, maxRetries = 3, retryDelayMs = 500, fetchImpl }) {
+  constructor({ baseUrl, apiKey, accountId, timeoutMs = 30000, maxRetries = 3, retryDelayMs = 500, fetchImpl, extraHeaders }) {
     if (!baseUrl) throw new Error('baseUrl is required');
     if (!apiKey) throw new Error('apiKey is required');
     this.baseUrl = baseUrl.replace(/\/+$/, '');
@@ -23,11 +23,14 @@ export class Http {
     this.maxRetries = maxRetries;
     this.retryDelayMs = retryDelayMs;
     this.fetch = fetchImpl ?? globalThis.fetch;
+    // async () => ({ header: value }), for headers that need a lookup first (the workspace id)
+    this.extraHeaders = extraHeaders;
   }
 
   async request(method, path, body) {
     // a delegated account to act on, instead of the key's own
     if (this.accountId) path += `${path.includes('?') ? '&' : '?'}account-id=${encodeURIComponent(this.accountId)}`;
+    const extra = this.extraHeaders ? await this.extraHeaders() : {};
     for (let attempt = 0; ; attempt++) {
       let response;
       try {
@@ -35,6 +38,7 @@ export class Http {
           method,
           headers: {
             'X-API-KEY': this.apiKey,
+            ...extra,
             Accept: 'application/json',
             ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
           },

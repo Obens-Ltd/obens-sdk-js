@@ -9,6 +9,10 @@ export interface ClientOptions {
   apiKey: string;
   /** act as this delegated account instead of the key's own */
   accountId?: string;
+  /** The trace api that holds batches and transactions. Default: baseUrl with /v2/core swapped for /v2/trace */
+  traceUrl?: string;
+  /** Batches and transactions wait for the platform to finish creating them (default 90000) */
+  traceTimeoutMs?: number;
   timeoutMs?: number;
   maxRetries?: number;
   retryDelayMs?: number;
@@ -59,6 +63,116 @@ export interface SyncReport {
   results: SyncResult[];
 }
 
+export interface QuantityPush {
+  value: number;
+  /** a unit symbol, e.g. KG, T, L, or a currency such as EUR for prices */
+  unit: string;
+}
+
+export interface BatchPush {
+  externalId: string;
+  /** required to create, ignored afterwards */
+  elementId?: string;
+  /** required to create, ignored afterwards */
+  productionMethodId?: string;
+  name?: string;
+  quantity?: QuantityPush;
+  /** 2026-01-31 */
+  productionDate?: string;
+  expiryDate?: string;
+  /** the production method's form by field name, see `batches.schema` */
+  data?: Record<string, unknown>;
+}
+
+export interface TransactionPush {
+  externalId: string;
+  elementId: string;
+  /** A purchase from a farmer: his platform id, or `subActorExternalId` (your id). Needs `collected`. */
+  subActorId?: string;
+  subActorExternalId?: string;
+  /** A transfer between accounts: one of them is the key's account. Platform ids, or `...ExternalId` of linked accounts. */
+  supplierId?: string;
+  supplierExternalId?: string;
+  clientId?: string;
+  clientExternalId?: string;
+  name?: string;
+  date?: string;
+  progress?: 'PROGRESS' | 'EXECUTED';
+  unitPrice?: QuantityPush;
+  transportPrice?: QuantityPush;
+  packingPrice?: QuantityPush;
+  servicesPrice?: QuantityPush;
+  taxPrice?: QuantityPush;
+  /** A transfer: the supplier's batches, by your id. Fixed once created. */
+  batches?: { batchExternalId: string; quantity: QuantityPush }[];
+  /** A purchase: the batch it creates. */
+  collected?: {
+    name: string;
+    quantity: QuantityPush;
+    productionDate?: string;
+    expiryDate?: string;
+    productionMethodId?: string;
+    facilityIds?: string[];
+    facilityExternalIds?: string[];
+  };
+  /** the transaction form by field name, see `transactions.schema` */
+  data?: Record<string, unknown>;
+}
+
+export interface FieldRef {
+  id: string; staticId?: string; name: string; type: string; writable: boolean; valueHint?: string;
+  choices?: { id: string; label: string; value: string }[];
+}
+
+export interface Page<T> {
+  data: T[];
+  page: number;
+  size: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+}
+
+export interface FieldValue {
+  id: string;
+  staticId?: string;
+  name: string;
+  type: string;
+  /** string | number | { value, unit } | string[] */
+  value: unknown;
+}
+
+export interface BatchSummary {
+  id: string;
+  name: string;
+  ref?: string;
+  externalId?: string;
+  productionDate?: string;
+  expiryDate?: string;
+  element?: { id: string; name: string };
+  owner?: { id: string; name: string };
+  quantities: { value: number; unit: string; order?: number }[];
+}
+
+export interface TransactionSummary {
+  id: string;
+  name: string;
+  externalId?: string;
+  progress: string;
+  date?: string;
+  totalQuantity?: number;
+  client?: { id: string; name: string };
+  supplier?: { id: string; name: string };
+  element?: { id: string; name: string };
+  unitPrice?: { value: number; unit: string };
+  totalPrice?: { value: number; unit: string };
+}
+
+export interface TraceResource<P> {
+  upsert(push: P): Promise<SyncResult>;
+  bulk(items: P[]): Promise<SyncResult[]>;
+}
+
 export class ObensApiError extends Error {
   status: number;
   body: unknown;
@@ -94,6 +208,18 @@ export class ObensClient {
   constructor(options: ClientOptions);
   subActors: Resource<SubActorPush>;
   facilities: Resource<FacilityPush>;
+  batches: TraceResource<BatchPush> & {
+    get(externalId: string, options?: { ownerId?: string }): Promise<any>;
+    list(elementId: string, options?: { ownerId?: string; search?: string; year?: number; page?: number; size?: number }): Promise<Page<BatchSummary>>;
+    data(externalId: string, options?: { ownerId?: string }): Promise<FieldValue[]>;
+    schema(productionMethodId: string): Promise<FieldRef[]>;
+  };
+  transactions: TraceResource<TransactionPush> & {
+    get(externalId: string, options?: { supplierId?: string }): Promise<any>;
+    list(elementId: string, options?: { otherAccountId?: string; type?: 'BUY' | 'SELL'; start?: string; end?: string; search?: string; page?: number; size?: number }): Promise<Page<TransactionSummary>>;
+    data(externalId: string, options?: { supplierId?: string }): Promise<FieldValue[]>;
+    schema(elementId: string, options?: { clientId?: string }): Promise<FieldRef[]>;
+  };
   accounts: {
     accessible(): Promise<{ id: string; name: string; self: boolean }[]>;
     link(externalId: string, accountId: string): Promise<Mapping>;
